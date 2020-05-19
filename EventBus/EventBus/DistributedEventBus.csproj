@@ -3,6 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>App.DistributedEventBus</RootNamespace>
+    <PackageProjectUrl>https://github.com/hadoan/distributed-event-bus</PackageProjectUrl>
+    <Company />
+    <Authors />
   </PropertyGroup>
 
   <ItemGroup>

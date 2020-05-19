@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>App.EventBusRabbitMQ</RootNamespace>
+    <PackageId>DistributedEventBus.EventBusRabbitMQ</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Abp" Version="5.1.0" />
     <PackageReference Include="Autofac" Version="4.9.4" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.0" />
