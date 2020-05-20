@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Publisher
+namespace Consumer
 {
     public class TestIntegrationEvent : IntegrationEvent
     {

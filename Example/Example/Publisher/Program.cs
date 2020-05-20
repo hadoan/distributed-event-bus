@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using App.DistributedEventBus;
 using App.DistributedEventBus.Abstractions;
 using App.EventBusServiceBus;
 using Microsoft.Azure.ServiceBus;
@@ -9,53 +11,56 @@ namespace Publisher
 {
     class Program
     {
+        private static string subscriptionClientName = "publisher-client";
+        private static string serviceBusConnectionString = "service-bus-connection";
         private static ServiceProvider serviceProvider;
 
         static void Main(string[] args)
         {
             SetupContainer();
 
+            var eventBus = serviceProvider.GetService<IDistributedEventBus>();
 
+            for (int i = 0; i < 100; i++)
+            {
+                Console.WriteLine($"Sending test event ... {i}");
+                eventBus.Publish(new TestIntegrationEvent());
+
+                System.Threading.Tasks.Task.Delay(1000);
+            }
+            Console.WriteLine("Done, press enter to continue");
+            Console.ReadLine();
         }
 
 
         private static void SetupContainer()
         {
-            serviceProvider = new ServiceCollection()
-                    
-                     .BuildServiceProvider();
-
+            var serviceCollection = new ServiceCollection();
+           
+            ConfigDistributedEventBus(serviceCollection);
+            serviceCollection.AddLogging(configure => configure.AddConsole());
+            serviceProvider = serviceCollection.BuildServiceProvider();
         }
 
 
-        private void ConfigDistributedEventBus(IServiceCollection services)
-        {
-            //var subscriptionClientName = "SubscriptionClientName";
-            //services.AddSingleton<IServiceBusPersisterConnection>(sp =>
-            //{
-            //    var logger = sp.GetRequiredService<ILogger<DefaultServiceBusPersisterConnection>>();
+        private static void ConfigDistributedEventBus(IServiceCollection services)
+        {  
+            services.AddSingleton<IServiceBusPersisterConnection>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<DefaultServiceBusPersisterConnection>>();
+                var serviceBusConnection = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
+                return new DefaultServiceBusPersisterConnection(serviceBusConnection, logger);
+            });
+            services.AddSingleton<IDistributedEventBus, App.EventBusServiceBus.EventBusServiceBus>(sp =>
+            {
+                var serviceBusPersisterConnection = sp.GetRequiredService<IServiceBusPersisterConnection>();
+                var logger = sp.GetRequiredService<ILogger<EventBusServiceBus>>();
+                var eventBusSubcriptionsManager = sp.GetRequiredService<IEventBusSubscriptionsManager>();
 
-            //    var serviceBusConnectionString = "EventBusConnection";
-            //    var serviceBusConnection = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
-
-            //    return new DefaultServiceBusPersisterConnection(serviceBusConnection, logger);
-            //});
-            //services.AddSingleton<IDistributedEventBus, App.EventBusServiceBus.EventBusServiceBus>(sp =>
-            //{
-            //    var serviceBusPersisterConnection = sp.GetRequiredService<IServiceBusPersisterConnection>();
-            //    var iLifetimeScope = sp.GetRequiredService<IScopedIocResolver>();
-            //    var logger = sp.GetRequiredService<ILogger<EventBusServiceBus.EventBusServiceBus>>();
-            //    var eventBusSubcriptionsManager = sp.GetRequiredService<IEventBusSubscriptionsManager>();
-
-            //    return new EventBusServiceBus.EventBusServiceBus(serviceBusPersisterConnection, logger,
-            //        eventBusSubcriptionsManager, subscriptionClientName, iLifetimeScope);
-            //});
-            //services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
-
-            //services.AddSingleton<IIntegrationEventHandler<JobUpdateByDriverIntegrationEvent>, JobUpdateByDriverEventHandler>();
-            //services.AddSingleton<IIntegrationEventHandler<RecalculateDriverStatusIntegrationEvent>, RecalculateDriverStatusIntegrationEventHandler>();
-            //services.AddSingleton<IIntegrationEventHandler<SendbirdChatMessageAddedIntegrationEvent>, SendbirdChatMessageAddedIntegrationEventHandler>();
-
+                return new EventBusServiceBus(serviceBusPersisterConnection, logger,
+                    eventBusSubcriptionsManager, subscriptionClientName, services);
+            });
+            services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
         }
 
     }

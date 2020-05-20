@@ -1,6 +1,5 @@
 ﻿namespace App.EventBusServiceBus
 {
-    using Autofac;
     using Microsoft.Azure.ServiceBus;
     using App.DistributedEventBus;
     using App.DistributedEventBus.Abstractions;
@@ -11,7 +10,7 @@
     using System;
     using System.Text;
     using System.Threading.Tasks;
-    using Abp.Dependency;
+    using Microsoft.Extensions.DependencyInjection;
 
     public class EventBusServiceBus : IDistributedEventBus
     {
@@ -19,12 +18,12 @@
         private readonly ILogger<EventBusServiceBus> _logger;
         private readonly IEventBusSubscriptionsManager _subsManager;
         private readonly SubscriptionClient _subscriptionClient;
-        private readonly IScopedIocResolver _autofac;
+        private readonly IServiceCollection _serviceCollection;
         private const string INTEGRATION_EVENT_SUFFIX = "IntegrationEvent";
 
         public EventBusServiceBus(IServiceBusPersisterConnection serviceBusPersisterConnection,
             ILogger<EventBusServiceBus> logger, IEventBusSubscriptionsManager subsManager, string subscriptionClientName,
-            IScopedIocResolver autofac)
+            IServiceCollection serviceCollection)
         {
             _serviceBusPersisterConnection = serviceBusPersisterConnection;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -32,7 +31,7 @@
 
             _subscriptionClient = new SubscriptionClient(serviceBusPersisterConnection.ServiceBusConnectionStringBuilder,
                 subscriptionClientName);
-            _autofac = autofac;
+            _serviceCollection = serviceCollection;
 
             RemoveDefaultRule();
             RegisterSubscriptionClientMessageHandler();
@@ -162,21 +161,21 @@
             var processed = false;
             if (_subsManager.HasSubscriptionsForEvent(eventName))
             {
-                using (var scope = _autofac.CreateScope())
+                using (var scope = _serviceCollection.BuildServiceProvider())
                 {
                     var subscriptions = _subsManager.GetHandlersForEvent(eventName);
                     foreach (var subscription in subscriptions)
                     {
                         if (subscription.IsDynamic)
                         {
-                            var handler = scope.Resolve(subscription.HandlerType) as IDynamicIntegrationEventHandler;
+                            var handler = scope.GetService(subscription.HandlerType) as IDynamicIntegrationEventHandler;
                             if (handler == null) continue;
                             dynamic eventData = JObject.Parse(message);
                             await handler.Handle(eventData);
                         }
                         else
                         {
-                            var handler = scope.Resolve(subscription.HandlerType);
+                            var handler = scope.GetService(subscription.HandlerType);
                             if (handler == null) continue;
                             var eventType = _subsManager.GetEventTypeByName(eventName);
                             var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
