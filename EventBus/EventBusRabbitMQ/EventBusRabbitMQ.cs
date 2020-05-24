@@ -20,13 +20,12 @@ namespace App.EventBusRabbitMQ
 {
     public class EventBusRabbitMQ : IDistributedEventBus, IDisposable
     {
-        const string BROKER_NAME = "eshop_event_bus";
+        const string BROKER_NAME = "distributed_event_bus";
 
         private readonly IRabbitMQPersistentConnection _persistentConnection;
         private readonly ILogger<EventBusRabbitMQ> _logger;
         private readonly IEventBusSubscriptionsManager _subsManager;
         private readonly IServiceCollection _serviceCollection;
-        private readonly string AUTOFAC_SCOPE_NAME = "eshop_event_bus";
         private readonly int _retryCount;
 
         private IModel _consumerChannel;
@@ -237,8 +236,7 @@ namespace App.EventBusRabbitMQ
 
             var channel = _persistentConnection.CreateModel();
 
-            channel.ExchangeDeclare(exchange: BROKER_NAME,
-                                    type: "direct");
+            channel.ExchangeDeclare(exchange: BROKER_NAME,type: "direct");
 
             channel.QueueDeclare(queue: _queueName,
                                  durable: true,
