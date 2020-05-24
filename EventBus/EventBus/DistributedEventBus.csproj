@@ -6,7 +6,7 @@
     <PackageProjectUrl>https://github.com/hadoan/distributed-event-bus</PackageProjectUrl>
     <Company />
     <Authors>Ha Doan</Authors>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
