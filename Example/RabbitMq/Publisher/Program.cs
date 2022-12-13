@@ -10,9 +10,9 @@ namespace Publisher
 {
     class Program
     {
-        private static string rabbitMqHostName = "localhost";
-        private static string rabbitMqUserName = "guest";
-        private static string rabbitMqPwd = "guest";
+        
+        private static string rabbitMqUserName = "admin";
+        private static string rabbitMqPwd = "rabbitMqPwd";
         private static int rabbitMqRetryCount = 5;
         private static string queueName = "test_queue";
 
@@ -52,21 +52,11 @@ namespace Publisher
             {
                 var logger = sp.GetRequiredService<ILogger<DefaultRabbitMQPersistentConnection>>();
 
-                var factory = new ConnectionFactory()
-                {
-                    HostName = rabbitMqHostName,
-                    DispatchConsumersAsync = true
-                };
+                ConnectionFactory factory = new ConnectionFactory();
+                factory.Uri = new Uri("amqps://host:port");
+                factory.UserName = rabbitMqUserName;
+                factory.Password = rabbitMqPwd;
 
-                if (!string.IsNullOrEmpty(rabbitMqUserName))
-                {
-                    factory.UserName = rabbitMqUserName;
-                }
-
-                if (!string.IsNullOrEmpty(rabbitMqPwd))
-                {
-                    factory.Password = rabbitMqPwd;
-                }
 
                 return new DefaultRabbitMQPersistentConnection(factory, logger, rabbitMqRetryCount);
             });

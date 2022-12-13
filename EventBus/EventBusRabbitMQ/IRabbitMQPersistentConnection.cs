@@ -4,7 +4,7 @@ using System;
 namespace App.EventBusRabbitMQ
 {
     public interface IRabbitMQPersistentConnection
-        : IDisposable
+      : IDisposable
     {
         bool IsConnected { get; }
 
@@ -12,4 +12,5 @@ namespace App.EventBusRabbitMQ
 
         IModel CreateModel();
     }
+
 }

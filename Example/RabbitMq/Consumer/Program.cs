@@ -12,9 +12,9 @@ namespace Consumer
     {
         private static IServiceProvider serviceProvider;
 
-        private static string rabbitMqHostName = "localhost";
-        private static string rabbitMqUserName = "guest";
-        private static string rabbitMqPwd = "guest";
+        
+        private static string rabbitMqUserName = "admin";
+        private static string rabbitMqPwd = "rabbitMqPwd";
         private static int rabbitMqRetryCount = 5;
         private static string queueName = "test_queue";
 
@@ -41,25 +41,16 @@ namespace Consumer
 
         private static void ConfigDistributedEventBus(IServiceCollection services)
         {
+            services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
             services.AddSingleton<IRabbitMQPersistentConnection>(sp =>
             {
                 var logger = sp.GetRequiredService<ILogger<DefaultRabbitMQPersistentConnection>>();
 
-                var factory = new ConnectionFactory()
-                {
-                    HostName = rabbitMqHostName,
-                    DispatchConsumersAsync = true
-                };
-
-                if (!string.IsNullOrEmpty(rabbitMqUserName))
-                {
-                    factory.UserName = rabbitMqUserName;
-                }
-
-                if (!string.IsNullOrEmpty(rabbitMqPwd))
-                {
-                    factory.Password = rabbitMqPwd;
-                }
+                ConnectionFactory factory = new ConnectionFactory();
+                factory.Uri = new Uri("amqps://host:port");
+                factory.UserName = rabbitMqUserName;
+                factory.Password = rabbitMqPwd;
+                factory.DispatchConsumersAsync = true;
 
                 return new DefaultRabbitMQPersistentConnection(factory, logger, rabbitMqRetryCount);
             });
@@ -72,7 +63,7 @@ namespace Consumer
 
                 return new EventBusRabbitMQ(rabbitMQPersistentConnection, logger, services, eventBusSubcriptionsManager, queueName, rabbitMqRetryCount);
             });
-            services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
+            
             services.AddSingleton<IIntegrationEventHandler<TestIntegrationEvent>, TestIntegrationEventHandler>();
 
         }
